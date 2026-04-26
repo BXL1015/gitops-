@@ -2,13 +2,13 @@
 
 FROM golang:1.22-alpine AS build
 
+ARG APP=svc1
 WORKDIR /src
 
 COPY go.mod ./
 COPY registry ./registry
 COPY tenant-lookup ./tenant-lookup
 COPY internal ./internal
-COPY launcher ./launcher
 COPY svc1 ./svc1
 COPY svc2 ./svc2
 COPY svc3 ./svc3
@@ -25,19 +25,16 @@ COPY svc13 ./svc13
 COPY svc14 ./svc14
 COPY svc15 ./svc15
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/launcher ./launcher && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/bin/registry ./registry && \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/bin/tenant-lookup ./tenant-lookup && \
-    for app in svc1 svc2 svc3 svc4 svc5 svc6 svc7 svc8 svc9 svc10 svc11 svc12 svc13 svc14 svc15; do \
-      CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o "/out/bin/$app" "./$app"; \
-    done
+RUN case "$APP" in \
+      registry|tenant-lookup|svc1|svc2|svc3|svc4|svc5|svc6|svc7|svc8|svc9|svc10|svc11|svc12|svc13|svc14|svc15) ;; \
+      *) echo "invalid APP=$APP" >&2; exit 1 ;; \
+    esac && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags="-s -w" -o /out/app "./$APP"
 
 FROM scratch
 
 WORKDIR /app
-COPY --from=build /out/launcher /app/launcher
-COPY --from=build /out/bin /app/bin
+COPY --from=build /out/app /app/app
 
-ENV APP=registry
 EXPOSE 8080 8081 9000
-ENTRYPOINT ["/app/launcher"]
+ENTRYPOINT ["/app/app"]

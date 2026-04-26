@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  labels:
+    app: registry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      containers:
+        - name: registry
+          image: ghcr.io/bxl1015/gitops-lane-registry:master
+          imagePullPolicy: Always
+          env:
+            - name: REGISTRY_LISTEN_ADDR
+              value: ":8080"
+          ports:
+            - name: http
+              containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  labels:
+    app: registry
+spec:
+  selector:
+    app: registry
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

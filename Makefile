@@ -36,7 +36,6 @@ endif
 build:
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o registry/registry$(EXE) ./registry
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o tenant-lookup/tenant-lookup$(EXE) ./tenant-lookup
-	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o launcher/launcher$(EXE) ./launcher
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o svc1/svc1$(EXE) ./svc1
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o svc2/svc2$(EXE) ./svc2
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o svc3/svc3$(EXE) ./svc3

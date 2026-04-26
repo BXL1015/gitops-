@@ -7,17 +7,26 @@ on:
       - dev
   workflow_dispatch:
     inputs:
+      services:
+        description: "Programs to build, for example svc3,svc4. Empty means all business services."
+        required: false
+        type: string
       set_env:
-        description: "Optional SET environment number for tagging, for example 4"
+        description: "Manifest environment to update, for example 0 or 4. Empty means build images only."
         required: false
         type: string
       image_tag:
         description: "Optional explicit image tag"
         required: false
         type: string
+      update_manifests:
+        description: "Update Kubernetes YAML image tags and commit them"
+        required: false
+        type: boolean
+        default: true
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 jobs:
@@ -35,11 +44,10 @@ jobs:
       - name: Test
         run: go test ./...
 
-      - name: Prepare image metadata
+      - name: Prepare build plan
         id: meta
         shell: bash
         run: |
-          image="ghcr.io/${GITHUB_REPOSITORY,,}"
           short_sha="${GITHUB_SHA::7}"
 
           explicit_tag="${{ inputs.image_tag }}"
@@ -52,10 +60,17 @@ jobs:
             tag="${GITHUB_REF_NAME}-${short_sha}"
           fi
 
+          services="${{ inputs.services }}"
+          if [ -z "$services" ]; then
+            services="svc1,svc2,svc3,svc4,svc5,svc6,svc7,svc8,svc9,svc10,svc11,svc12,svc13,svc14,svc15"
+          fi
+
+          programs="$(echo "$services" | tr ',' ' ' | xargs)"
+
           {
-            echo "image=$image"
             echo "tag=$tag"
             echo "branch_tag=${GITHUB_REF_NAME}"
+            echo "programs=$programs"
           } >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
@@ -68,14 +83,69 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
-            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.branch_tag }}
-          labels: |
-            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+      - name: Build and push selected images
+        shell: bash
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          for app in ${{ steps.meta.outputs.programs }}; do
+            case "$app" in
+              registry|tenant-lookup|svc1|svc2|svc3|svc4|svc5|svc6|svc7|svc8|svc9|svc10|svc11|svc12|svc13|svc14|svc15) ;;
+              *) echo "invalid service/program: $app" >&2; exit 1 ;;
+            esac
+
+            image="ghcr.io/${owner}/gitops-lane-${app}"
+            docker buildx build \
+              --push \
+              --build-arg "APP=${app}" \
+              --label "org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}" \
+              --label "org.opencontainers.image.revision=${{ github.sha }}" \
+              -t "${image}:${{ steps.meta.outputs.tag }}" \
+              -t "${image}:${{ steps.meta.outputs.branch_tag }}" \
+              .
+          done
+
+      - name: Update Kubernetes manifest image tags
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_manifests && inputs.set_env != '' }}
+        shell: bash
+        run: |
+          owner="${GITHUB_REPOSITORY_OWNER,,}"
+          target_env="${{ inputs.set_env }}"
+          tag="${{ steps.meta.outputs.tag }}"
+
+          if [ "$target_env" = "0" ]; then
+            dir="k8s/base"
+          else
+            dir="k8s/envs/env${target_env}"
+          fi
+
+          if [ ! -d "$dir" ]; then
+            echo "Manifest directory $dir does not exist."
+            echo "Create the full environment package first, then rerun this workflow."
+            exit 1
+          fi
+
+          for app in ${{ steps.meta.outputs.programs }}; do
+            file="${dir}/${app}.yaml"
+            if [ ! -f "$file" ]; then
+              echo "Manifest file $file does not exist; skip non-service or missing manifest."
+              continue
+            fi
+
+            image="ghcr.io/${owner}/gitops-lane-${app}:${tag}"
+            sed -i -E "s#image: ghcr\\.io/[^/]+/gitops-lane-${app}:[^[:space:]]+#image: ${image}#" "$file"
+          done
+
+      - name: Commit manifest updates
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_manifests && inputs.set_env != '' }}
+        shell: bash
+        run: |
+          if git diff --quiet -- k8s; then
+            echo "No manifest changes."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add k8s
+          git commit -m "Update env ${{ inputs.set_env }} manifests to ${{ steps.meta.outputs.tag }}"
+          git push

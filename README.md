@@ -9,27 +9,24 @@ microservice routing.
 - `tenant-lookup`: simulates the SEaaS / tenant platform, stores
   `tenant/account -> env`.
 - `svc1` ... `svc15`: business services.
-- `launcher`: container entrypoint. One image can run any program by setting
-  `APP`.
 
 All programs use only the Go standard library.
 
 ## CI Image
 
 The GitHub Actions workflow at `.github/workflows/image-ci.yml` builds and
-pushes one common image to GitHub Container Registry:
+pushes one image per program to GitHub Container Registry:
 
 ```text
-ghcr.io/bxl1015/gitops-:<tag>
+ghcr.io/bxl1015/gitops-lane-svc3:<tag>
+ghcr.io/bxl1015/gitops-lane-svc4:<tag>
 ```
 
-The image contains every program. In Kubernetes, choose the process with Pod
-environment variables:
+In Kubernetes, each service manifest points to its own image. The Pod still
+reads service identity and environment from YAML environment variables:
 
 ```yaml
 env:
-  - name: APP
-    value: svc3
   - name: SERVICE_NAME
     value: svc3
   - name: SERVICE_ENV
