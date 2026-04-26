@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       services:
-        description: "Programs to build, for example svc3,svc4. Empty means all business services."
+        description: "Optional override, for example svc3,svc4. Empty means auto-detect changed services."
         required: false
         type: string
       set_env:
@@ -35,6 +35,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Go
         uses: actions/setup-go@v5
@@ -60,12 +62,41 @@ jobs:
             tag="${GITHUB_REF_NAME}-${short_sha}"
           fi
 
-          services="${{ inputs.services }}"
-          if [ -z "$services" ]; then
-            services="svc1,svc2,svc3,svc4,svc5,svc6,svc7,svc8,svc9,svc10,svc11,svc12,svc13,svc14,svc15"
+          override_services="${{ inputs.services }}"
+          if [ -n "$override_services" ]; then
+            programs="$(echo "$override_services" | tr ',' ' ' | xargs)"
+          else
+            if [ "${{ github.event_name }}" = "pull_request" ]; then
+              base="${{ github.event.pull_request.base.sha }}"
+            elif git rev-parse HEAD^ >/dev/null 2>&1; then
+              base="HEAD^"
+            else
+              base="$(git hash-object -t tree /dev/null)"
+            fi
+
+            changed="$(git diff --name-only "$base" HEAD)"
+            programs=""
+
+            if echo "$changed" | grep -qE '^(internal/|go\.mod$|Dockerfile$)'; then
+              programs="svc1 svc2 svc3 svc4 svc5 svc6 svc7 svc8 svc9 svc10 svc11 svc12 svc13 svc14 svc15"
+            else
+              for app in registry tenant-lookup svc1 svc2 svc3 svc4 svc5 svc6 svc7 svc8 svc9 svc10 svc11 svc12 svc13 svc14 svc15; do
+                if echo "$changed" | grep -qE "^${app}/"; then
+                  programs="$programs $app"
+                fi
+              done
+            fi
+
+            programs="$(echo "$programs" | xargs)"
           fi
 
-          programs="$(echo "$services" | tr ',' ' ' | xargs)"
+          if [ -z "$programs" ]; then
+            echo "No service code changes detected."
+            echo "programs=" >> "$GITHUB_OUTPUT"
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "branch_tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
 
           {
             echo "tag=$tag"
@@ -74,9 +105,11 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Setup Docker Buildx
+        if: ${{ steps.meta.outputs.programs != '' }}
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
+        if: ${{ steps.meta.outputs.programs != '' }}
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -84,6 +117,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push selected images
+        if: ${{ steps.meta.outputs.programs != '' }}
         shell: bash
         run: |
           owner="${GITHUB_REPOSITORY_OWNER,,}"
@@ -105,7 +139,7 @@ jobs:
           done
 
       - name: Update Kubernetes manifest image tags
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_manifests && inputs.set_env != '' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_manifests && inputs.set_env != '' && steps.meta.outputs.programs != '' }}
         shell: bash
         run: |
           owner="${GITHUB_REPOSITORY_OWNER,,}"
@@ -136,7 +170,7 @@ jobs:
           done
 
       - name: Commit manifest updates
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_manifests && inputs.set_env != '' }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_manifests && inputs.set_env != '' && steps.meta.outputs.programs != '' }}
         shell: bash
         run: |
           if git diff --quiet -- k8s; then
