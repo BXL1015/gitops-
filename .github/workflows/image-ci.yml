@@ -12,18 +12,13 @@ on:
         required: false
         type: string
       set_env:
-        description: "Manifest environment to update, for example 0 or 4. Empty means build images only."
+        description: "Optional SET environment number for image tag, for example 4"
         required: false
         type: string
       image_tag:
         description: "Optional explicit image tag"
         required: false
         type: string
-      update_manifests:
-        description: "Update Kubernetes YAML image tags and commit them"
-        required: false
-        type: boolean
-        default: true
 
 permissions:
   contents: write
@@ -137,49 +132,3 @@ jobs:
               -t "${image}:${{ steps.meta.outputs.branch_tag }}" \
               .
           done
-
-      - name: Update Kubernetes manifest image tags
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_manifests && inputs.set_env != '' && steps.meta.outputs.programs != '' }}
-        shell: bash
-        run: |
-          owner="${GITHUB_REPOSITORY_OWNER,,}"
-          target_env="${{ inputs.set_env }}"
-          tag="${{ steps.meta.outputs.tag }}"
-
-          if [ "$target_env" = "0" ]; then
-            dir="k8s/base"
-          else
-            dir="k8s/envs/env${target_env}"
-          fi
-
-          if [ ! -d "$dir" ]; then
-            echo "Manifest directory $dir does not exist."
-            echo "Create the full environment package first, then rerun this workflow."
-            exit 1
-          fi
-
-          for app in ${{ steps.meta.outputs.programs }}; do
-            file="${dir}/${app}.yaml"
-            if [ ! -f "$file" ]; then
-              echo "Manifest file $file does not exist; skip non-service or missing manifest."
-              continue
-            fi
-
-            image="ghcr.io/${owner}/gitops-lane-${app}:${tag}"
-            sed -i -E "s#image: ghcr\\.io/[^/]+/gitops-lane-${app}:[^[:space:]]+#image: ${image}#" "$file"
-          done
-
-      - name: Commit manifest updates
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.update_manifests && inputs.set_env != '' && steps.meta.outputs.programs != '' }}
-        shell: bash
-        run: |
-          if git diff --quiet -- k8s; then
-            echo "No manifest changes."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add k8s
-          git commit -m "Update env ${{ inputs.set_env }} manifests to ${{ steps.meta.outputs.tag }}"
-          git push
