@@ -1,23 +1,23 @@
-# Build all 16 programs:
+# Build all programs:
 #   make build
 #
 # Run manually in this order:
 #   1. Start registry:
 #        go run ./registry
+#      Start tenant lookup:
+#        TENANT_BINDINGS=alice=1,bob=2 go run ./tenant-lookup
 #
-#   2. Start baseline services, for example:
-#        SERVICE_NAME=svc15 SERVICE_ENV=0 LISTEN_ADDR=:9015 PUBLIC_ADDR=http://127.0.0.1:9015 REGISTRY_ADDR=http://127.0.0.1:8080 go run ./svc15
-#        SERVICE_NAME=svc14 SERVICE_ENV=0 DOWNSTREAM_SERVICE=svc15 LISTEN_ADDR=:9014 PUBLIC_ADDR=http://127.0.0.1:9014 REGISTRY_ADDR=http://127.0.0.1:8080 go run ./svc14
+#   2. Start all baseline services svc1~svc15 with SERVICE_ENV=0.
+#      If DOWNSTREAM_SERVICE is not set, svc1->svc2->...->svc15 is used.
 #
-#   3. Start a lane instance, for example svc14 in env 1:
-#        SERVICE_NAME=svc14 SERVICE_ENV=1 DOWNSTREAM_SERVICE=svc15 LISTEN_ADDR=:9114 PUBLIC_ADDR=http://127.0.0.1:9114 REGISTRY_ADDR=http://127.0.0.1:8080 go run ./svc14
+#   3. Start hot SET services svc3~svc8 with SERVICE_ENV=1.
 #
-#   4. Test "one lane until fallback, then baseline from there":
-#      because you call svc14 env 1 directly, svc14 uses its own SERVICE_ENV=1
-#      to look for svc15 env 1. If svc15 env 1 is absent, registry returns
-#      svc15 env 0. After that, svc15 is an env 0 process; no protocol header
-#      is used to carry the original env 1.
-#        curl "http://127.0.0.1:9114/?n=100"
+#   4. Test from the baseline entrance. svc2 is a default boundary service:
+#        curl "http://127.0.0.1:9001/?tenant=alice&n=100"
+#
+#      svc2 queries tenant-lookup, gets env 1, then routes to svc3 env 1.
+#      svc3~svc8 stay in env 1. svc8 falls back to svc9 env 0 because svc9 is
+#      not in the hot layer, and the rest of the chain stays baseline.
 #
 # Memory tip:
 #   Run with a small Go memory target if you want to stress low-footprint behavior:
@@ -35,6 +35,8 @@ endif
 
 build:
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o registry/registry$(EXE) ./registry
+	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o tenant-lookup/tenant-lookup$(EXE) ./tenant-lookup
+	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o launcher/launcher$(EXE) ./launcher
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o svc1/svc1$(EXE) ./svc1
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o svc2/svc2$(EXE) ./svc2
 	go build $(GOFLAGS) -ldflags="$(LDFLAGS)" -o svc3/svc3$(EXE) ./svc3
