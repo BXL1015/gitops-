@@ -3,6 +3,7 @@ name: Build Container Image
 on:
   push:
     branches:
+      - main
       - master
       - dev
   workflow_dispatch:
