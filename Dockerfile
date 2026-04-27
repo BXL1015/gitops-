@@ -39,4 +39,3 @@ COPY --from=build /out/app /app/app
 EXPOSE 8080 8081 9000
 ENTRYPOINT ["/app/app"]
 
-# Force rebuild all
