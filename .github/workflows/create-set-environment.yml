@@ -1,16 +1,13 @@
 name: Create SET Environment
 
 on:
-  push:
-    branches:
-      - dev # 当 dev 分支有变更时自动触发
   workflow_dispatch:
     inputs:
       set_env:
         description: "SET environment number to create, for example 3"
         required: true
         type: string
-        default: "8" # 默认值设为 8
+        default: "8"
       services:
         description: "Services to create. Empty means hot services: svc3,svc4,svc5,svc6,svc7,svc8"
         required: false
@@ -24,7 +21,7 @@ on:
         description: "Overwrite existing k8s/envs/envN files"
         required: false
         type: boolean
-        default: true # 默认开启覆盖模式
+        default: true
 
 permissions:
   contents: write
@@ -48,11 +45,6 @@ jobs:
           services="${{ inputs.services }}"
           image_tag="${{ inputs.image_tag }}"
           overwrite="${{ inputs.overwrite }}"
-
-          # 如果是 push 触发，inputs 会为空，设置默认值
-          if [ -z "$set_env" ]; then set_env="8"; fi
-          if [ -z "$image_tag" ]; then image_tag="dev"; fi
-          if [ -z "$overwrite" ]; then overwrite="true"; fi
           owner="${GITHUB_REPOSITORY_OWNER,,}"
 
           if ! echo "$set_env" | grep -qE '^[0-9]+$'; then
