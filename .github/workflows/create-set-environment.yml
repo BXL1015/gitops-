@@ -13,10 +13,10 @@ on:
         required: false
         type: string
       image_tag:
-        description: "新环境使用的镜像标签 (留空默认使用 dev)"
+        description: "新环境使用的镜像标签 (留空默认使用 main)"
         required: false
         type: string
-        default: "dev"
+        default: "main"
       overwrite:
         description: "是否覆盖已存在的环境配置文件"
         required: false
