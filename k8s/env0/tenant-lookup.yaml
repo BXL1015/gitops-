@@ -25,7 +25,7 @@ spec:
             - name: TENANT_LOOKUP_LISTEN_ADDR
               value: ":8081"
             - name: TENANT_BINDINGS
-              value: "alice=2,bob=2"
+              value: "alice=8,bob=3"
           ports:
             - name: http
               containerPort: 8081
