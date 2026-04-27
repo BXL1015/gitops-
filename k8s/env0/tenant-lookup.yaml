@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: tenant-lookup
-          image: hcbxl/argocd:tenant-lookup-main
+          image: ghcr.io/bxl1015:tenant-lookup-main
           imagePullPolicy: Always
           env:
             - name: TENANT_LOOKUP_LISTEN_ADDR

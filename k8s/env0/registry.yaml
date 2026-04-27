@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: registry
-          image: hcbxl/argocd:registry-main
+          image: ghcr.io/bxl1015:registry-main
           imagePullPolicy: Always
           env:
             - name: REGISTRY_LISTEN_ADDR

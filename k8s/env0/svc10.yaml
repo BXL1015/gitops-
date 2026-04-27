@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: svc10
-          image: hcbxl/argocd:svc10-main
+          image: ghcr.io/bxl1015:svc10-main
           imagePullPolicy: Always
           env:
             - name: SERVICE_NAME
