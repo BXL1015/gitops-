@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: svc11
-          image: ghcr.io/bxl1015/gitops-lane-svc11:master
+          image: ghcr.io/bxl1015/gitops-lane-svc11:main
           imagePullPolicy: Always
           env:
             - name: SERVICE_NAME

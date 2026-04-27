@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: tenant-lookup
-          image: ghcr.io/bxl1015/gitops-lane-tenant-lookup:master
+          image: ghcr.io/bxl1015/gitops-lane-tenant-lookup:main
           imagePullPolicy: Always
           env:
             - name: TENANT_LOOKUP_LISTEN_ADDR
