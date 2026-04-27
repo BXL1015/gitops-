@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: tenant-lookup
-          image: hcbxl/gitops-lane-tenant-lookup:main
+          image: hcbxl/argocd:tenant-lookup-main
           imagePullPolicy: Always
           env:
             - name: TENANT_LOOKUP_LISTEN_ADDR

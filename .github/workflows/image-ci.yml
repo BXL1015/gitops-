@@ -123,13 +123,13 @@ jobs:
               *) echo "invalid service/program: $app" >&2; exit 1 ;;
             esac
 
-            # 镜像命名规则改为 Docker Hub 格式
-            image="${owner}/gitops-lane-${app}"
+            # 全部塞进 hcbxl/argocd 仓库，用 Tag 区分服务
+            image="hcbxl/argocd"
             docker buildx build \
               --push \
               --platform linux/amd64 \
               --build-arg "APP=${app}" \
-              -t "${image}:${{ steps.meta.outputs.tag }}" \
-              -t "${image}:${{ steps.meta.outputs.branch_tag }}" \
+              -t "${image}:${app}-${{ steps.meta.outputs.tag }}" \
+              -t "${image}:${app}-${{ steps.meta.outputs.branch_tag }}" \
               .
           done

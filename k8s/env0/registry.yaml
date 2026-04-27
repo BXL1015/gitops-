@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
         - name: registry
-          image: hcbxl/gitops-lane-registry:main
+          image: hcbxl/argocd:registry-main
           imagePullPolicy: Always
           env:
             - name: REGISTRY_LISTEN_ADDR
