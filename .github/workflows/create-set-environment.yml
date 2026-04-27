@@ -4,21 +4,21 @@ on:
   workflow_dispatch:
     inputs:
       set_env:
-        description: "SET environment number to create, for example 3"
+        description: "要创建的泳道环境编号 (例如 8)"
         required: true
         type: string
         default: "8"
       services:
-        description: "Services to create. Empty means hot services: svc3,svc4,svc5,svc6,svc7,svc8"
+        description: "要创建的服务 (留空默认创建全链路热层：svc3-svc8)"
         required: false
         type: string
       image_tag:
-        description: "Image tag for the new environment. Empty means dev"
+        description: "新环境使用的镜像标签 (留空默认使用 dev)"
         required: false
         type: string
         default: "dev"
       overwrite:
-        description: "Overwrite existing k8s/envs/envN files"
+        description: "是否覆盖已存在的环境配置文件"
         required: false
         type: boolean
         default: true
