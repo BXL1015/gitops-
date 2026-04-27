@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: swimlane-apps
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: 'https://github.com/BXL1015/gitops-.git'
+        revision: HEAD
+        directories:
+          - path: 'k8s/env*'
+  template:
+    metadata:
+      name: 'lane-{{path.basename}}'
+    spec:
+      project: default
+      source:
+        repoURL: 'https://github.com/BXL1015/gitops-.git'
+        targetRevision: HEAD
+        path: '{{path}}'
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: default
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
