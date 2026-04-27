@@ -1,4 +1,4 @@
-name: Build Container Image
+name: 构建并推送容器镜像
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: Create SET Environment
+name: 一键创建 SET 实验泳道环境
 
 on:
   workflow_dispatch:
