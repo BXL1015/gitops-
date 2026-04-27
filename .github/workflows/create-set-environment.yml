@@ -98,14 +98,18 @@ jobs:
           text = open(path, encoding="utf-8").read()
 
           set_name = f"{app}-env{env}"
+          # 1. 替换资源名称
           text = re.sub(rf"\bname: {app}\b", f"name: {set_name}", text)
+          # 2. 替换环境变量中的环境 ID
           text = re.sub(r'env: "0"', f'env: "{env}"', text)
           text = re.sub(r'value: "0"', f'value: "{env}"', text)
+          # 3. 替换镜像地址 (兼容不同 registry)
           text = re.sub(
-              rf'image: ghcr\.io/[^/]+/gitops-lane-{app}:[^\s]+',
+              r'image: [^\s]+',
               f'image: ghcr.io/{owner}/gitops-lane-{app}:{tag}',
               text,
           )
+          # 4. 替换下游调用地址
           text = re.sub(
               rf'value: "http://{app}:9000"',
               f'value: "http://{set_name}:9000"',
