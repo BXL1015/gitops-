@@ -74,7 +74,7 @@ jobs:
             programs=""
 
             if echo "$changed" | grep -qE '^(internal/|go\.mod$|Dockerfile$)'; then
-              programs="svc1 svc2 svc3 svc4 svc5 svc6 svc7 svc8 svc9 svc10 svc11 svc12 svc13 svc14 svc15"
+              programs="registry tenant-lookup svc1 svc2 svc3 svc4 svc5 svc6 svc7 svc8 svc9 svc10 svc11 svc12 svc13 svc14 svc15"
             else
               for app in registry tenant-lookup svc1 svc2 svc3 svc4 svc5 svc6 svc7 svc8 svc9 svc10 svc11 svc12 svc13 svc14 svc15; do
                 if echo "$changed" | grep -qE "^${app}/"; then
