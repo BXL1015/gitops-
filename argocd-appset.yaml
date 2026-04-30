@@ -1,24 +1,23 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: swimlane-apps
+  name: microservices-swimlane
   namespace: argocd
 spec:
   generators:
-    - git:
-        repoURL: 'https://github.com/BXL1015/gitops-.git'
-        revision: HEAD
-        directories:
-          - path: 'k8s/env*'
+  - list:
+      elements:
+      - env: env0
+      - env: env8
   template:
     metadata:
-      name: 'lane-{{path.basename}}'
+      name: '{{env}}-apps'
     spec:
       project: default
       source:
-        repoURL: 'https://github.com/BXL1015/gitops-.git'
-        targetRevision: HEAD
-        path: '{{path}}'
+        repoURL: https://github.com/bxl1015/gitops-lane-sim.git # 请根据实际仓库地址修改
+        targetRevision: main
+        path: 'k8s/{{env}}'
       destination:
         server: https://kubernetes.default.svc
         namespace: default

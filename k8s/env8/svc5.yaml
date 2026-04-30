@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: svc5-env8
+  name: svc5
   labels:
     app: svc5
     env: "8"
@@ -18,22 +18,19 @@ spec:
         env: "8"
     spec:
       containers:
-        - name: svc5-env8
-          image: ghcr.io/bxl1015/gitops-lane-svc5:dev
-          imagePullPolicy: Always
+        - name: svc5
+          image: local/
+          ImagePullPolicy: Always
           env:
             - name: SERVICE_NAME
               value: svc5
             - name: SERVICE_ENV
               value: "8"
-            - name: LISTEN_ADDR
-              value: ":9000"
-            - name: PUBLIC_ADDR
-              value: "http://svc5-env8:9000"
-            - name: REGISTRY_ADDR
-              value: "http://registry:8080"
-            - name: TENANT_LOOKUP_ADDR
-              value: "http://tenant-lookup:8081"
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              memory: 64Mi
           ports:
             - name: http
               containerPort: 9000
@@ -41,15 +38,15 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: svc5-env8
+  name: svc5
   labels:
     app: svc5
-    env: "8"
 spec:
   selector:
     app: svc5
-    env: "8"
   ports:
-    - name: http
+    - protocol: TCP
       port: 9000
-      targetPort: http
+      targetPort: 9000
+
+

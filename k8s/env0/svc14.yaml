@@ -19,21 +19,18 @@ spec:
     spec:
       containers:
         - name: svc14
-          image: ghcr.io/bxl1015/gitops-lane-svc14:main
-          imagePullPolicy: Always
+          image: local/
+          ImagePullPolicy: Always
           env:
             - name: SERVICE_NAME
               value: svc14
             - name: SERVICE_ENV
               value: "0"
-            - name: LISTEN_ADDR
-              value: ":9000"
-            - name: PUBLIC_ADDR
-              value: "http://svc14:9000"
-            - name: REGISTRY_ADDR
-              value: "http://registry:8080"
-            - name: TENANT_LOOKUP_ADDR
-              value: "http://tenant-lookup:8081"
+          resources:
+            limits:
+              memory: 128Mi
+            requests:
+              memory: 64Mi
           ports:
             - name: http
               containerPort: 9000
@@ -44,12 +41,12 @@ metadata:
   name: svc14
   labels:
     app: svc14
-    env: "0"
 spec:
   selector:
     app: svc14
-    env: "0"
   ports:
-    - name: http
+    - protocol: TCP
       port: 9000
-      targetPort: http
+      targetPort: 9000
+
+

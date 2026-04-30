@@ -1,0 +1,38 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: all-services-subsets
+spec:
+  host: "*.default.svc.cluster.local" # ƥ�����з���
+  subsets:
+  - name: env0
+    labels:
+      env: "0"
+  - name: env8
+    labels:
+      env: "8"
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: swimlane-router
+spec:
+  hosts:
+  - "*"
+  http:
+  - match:
+    - headers:
+        X-Tenant:
+          exact: "alice"
+    route:
+    - destination:
+        host: svc3 # �� svc3 ���￪ʼ����Ӿ��
+        subset: env8
+      fallback: # Istio 1.15+ ֧�ֻ�ͨ����� route ģ�����
+        target:
+          host: svc3
+          subset: env0
+  - route:
+    - destination:
+        host: svc3
+        subset: env0
